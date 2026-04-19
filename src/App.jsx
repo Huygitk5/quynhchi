@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import video from './assets/Download.mp4';
+import Confetti from 'react-confetti';
 
 const slidesData = [
   {
@@ -125,9 +126,6 @@ const slidesData = [
     title: 'Trực quan hóa hoạt động 🎥',
     content: (
       <div className="flex flex-col items-center justify-center w-full animate-fade-in-up">
-        <p className="text-gray-700 mb-6 text-lg text-center font-medium bg-white/60 px-6 py-2 rounded-full shadow-sm">
-          Hãy cùng xem dòng chảy của dầu nhớt bảo vệ động cơ trước khi làm bài nhé! 👇
-        </p>
         {/* Khung chứa Video */}
         <div className="w-full max-w-3xl aspect-video rounded-2xl overflow-hidden shadow-2xl border-[6px] border-white bg-black">
           <video 
@@ -191,11 +189,6 @@ const slidesData = [
         <h2 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-600">
           Bạn đã hoàn thành xuất sắc bài học!
         </h2>
-        <p className="text-gray-700 text-lg max-w-xl bg-gray-50 p-6 rounded-2xl border border-gray-100 shadow-sm">
-          Hy vọng qua phần trình bày này, bạn đã nắm vững kiến thức về hệ thống bôi trơn. 
-          <br/><br/>
-          <strong>💡 Lời khuyên:</strong> Đừng quên bảo dưỡng và thay dầu nhớt định kỳ cho chiếc xe của mình để động cơ luôn khỏe mạnh nhé! 🏍️🚗
-        </p>
         <div className="w-full max-w-md h-px bg-gray-200 my-4"></div>
         <p className="text-gray-500 italic font-medium flex items-center gap-2">
           <span>Phần Q&A: Mọi người có câu hỏi nào không ạ?</span>
@@ -210,6 +203,13 @@ export default function FunLubricationPresentation() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState({});
   const slide = slidesData[currentSlide];
+  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+
+  useEffect(() => {
+    const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleNext = () => {
     if (currentSlide < slidesData.length - 1) setCurrentSlide(currentSlide + 1);
@@ -236,129 +236,161 @@ export default function FunLubricationPresentation() {
   // Tính tiến độ
   const progress = ((currentSlide + 1) / slidesData.length) * 100;
 
+  const isLastSlide = currentSlide === slidesData.length - 1; // Kiểm tra có phải slide cuối không
+  const isCurrentQuizCorrect = slide.type === 'quiz' && quizAnswers[currentSlide] === slide.answer; // Kiểm tra trả lời đúng không
+  const showConfetti = isLastSlide || isCurrentQuizCorrect; // Hiện khi ở slide cuối HOẶC trả lời đúng
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-100 via-pink-100 to-yellow-100 flex items-center justify-center p-4 font-sans">
-      <div className="bg-white/80 backdrop-blur-lg w-full max-w-5xl h-[820px] flex flex-col rounded-[2rem] shadow-2xl overflow-hidden border border-white">        
-        {/* Header / Progress bar */}
-        <div className="h-3 w-full bg-gray-200 flex-shrink-0">
-          <div 
-            className="h-full bg-gradient-to-r from-pink-400 to-orange-400 transition-all duration-500 ease-out"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+    <>
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700;800&display=swap');
+          .custom-font {
+            font-family: 'Quicksand', sans-serif;
+          }
+          .bg-pattern {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.4) 2px, transparent 2px);
+            background-size: 30px 30px;
+          }
+        `}
+      </style>
 
-        <div className="p-8 md:p-12 flex-1 flex flex-col min-h-0">
-          
-          {/* Header Slide */}
-          <div className="mb-6 text-center flex-shrink-0">
-            <span className="inline-block py-1 px-3 rounded-full bg-gray-100 text-gray-500 text-sm font-bold tracking-wider mb-3">
-              SLIDE {currentSlide + 1} / {slidesData.length}
-            </span>
-            {slide.type === 'theory' ? (
-              <h1 className="text-3xl md:text-4xl font-extrabold drop-shadow-sm flex items-center justify-center gap-3">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-orange-500">
-                  {slide.title.substring(0, slide.title.lastIndexOf(' '))}
-                </span>
-                <span className="text-[1.1em] text-black drop-shadow-none">
-                  {slide.title.substring(slide.title.lastIndexOf(' ') + 1)}
-                </span>
-              </h1>
-            ) : (
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-                Luyện tập xíu nào! 🧠✨
-              </h1>
-            )}
+      <div className="min-h-screen bg-gradient-to-br from-cyan-100 via-pink-100 to-yellow-100 flex items-center justify-center p-4 custom-font">
+        <div className="absolute inset-0 bg-pattern pointer-events-none z-0"></div>
+        {showConfetti && (
+          <div className="absolute inset-0 z-50 pointer-events-none">
+            <Confetti 
+              width={windowSize.width} 
+              height={windowSize.height} 
+              recycle={isLastSlide} // Ở slide cuối thì rơi liên tục, câu hỏi thì rơi 1 lần rồi tắt
+              numberOfPieces={isLastSlide ? 500 : 200} // Slide cuối bắn 500 mảnh cho hoành tráng
+              gravity={0.15}
+            />
+          </div>
+        )}
+        <div className="bg-white/60 backdrop-blur-2xl w-full max-w-5xl h-[750px] flex flex-col rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.12)] overflow-hidden border-[1.5px] border-white">        
+          {/* Header / Progress bar */}
+          <div className="h-3 w-full bg-gray-200 flex-shrink-0">
+            <div 
+              className="h-full bg-gradient-to-r from-pink-400 to-orange-400 transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
           </div>
 
-          {/* Slide Content */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar pr-4 min-h-0 flex flex-col justify-center">
-            {slide.type === 'theory' ? (
-              <div className="animate-fade-in-up">
-                {slide.content}
-              </div>
-            ) : (
-              <div className="max-w-2xl mx-auto w-full animate-fade-in-up">
-                <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6 text-center">
-                  {slide.question}
-                </h2>
-                <div className="grid gap-3">
-                  {slide.options.map((option, idx) => {
-                    const isSelected = quizAnswers[currentSlide] === idx;
-                    const isCorrect = slide.answer === idx;
-                    const isAnswered = quizAnswers[currentSlide] !== undefined;
-                    
-                    let btnClass = "p-4 text-left rounded-2xl border-2 font-medium transition-all duration-300 text-lg ";
-                    
-                    if (!isAnswered) {
-                      btnClass += "bg-white border-gray-200 text-gray-600 hover:border-pink-400 hover:bg-pink-50 hover:-translate-y-1 hover:shadow-md cursor-pointer";
-                    } else if (isCorrect) {
-                      btnClass += "bg-green-100 border-green-500 text-green-800 shadow-inner";
-                    } else if (isSelected && !isCorrect) {
-                      btnClass += "bg-red-100 border-red-500 text-red-800";
-                    } else {
-                      btnClass += "bg-gray-50 border-gray-200 text-gray-400 opacity-50";
-                    }
-
-                    return (
-                      <button
-                        key={idx}
-                        onClick={() => handleSelectAnswer(idx)}
-                        disabled={isAnswered}
-                        className={btnClass}
-                      >
-                        <div className="flex justify-between items-center">
-                          <span>{option}</span>
-                          {isAnswered && isCorrect && <span className="text-2xl">🎉</span>}
-                          {isAnswered && isSelected && !isCorrect && <span className="text-2xl">😢</span>}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {quizAnswers[currentSlide] !== undefined && (
-                  <div className="mt-6 flex justify-center animate-fade-in-up">
-                    <button
-                      onClick={handleResetAnswer}
-                      className="px-5 py-2 bg-white border-2 border-gray-200 text-gray-600 rounded-full font-bold hover:bg-gray-100 hover:border-gray-300 transition-all flex items-center gap-2 shadow-sm active:scale-95"
-                    >
-                      🔄 Làm lại
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Navigation Controls */}
-          <div className="mt-6 flex justify-between items-center pt-6 border-t border-gray-100 flex-shrink-0">
-            <button
-              onClick={handlePrev}
-              disabled={currentSlide === 0}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${
-                currentSlide === 0 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-gray-300 shadow-sm'
-              }`}
-            >
-              ⬅️ Quay lại
-            </button>
+          <div className="p-8 md:p-12 flex-1 flex flex-col min-h-0">
             
-            <button
-              onClick={handleNext}
-              disabled={currentSlide === slidesData.length - 1}
-              className={`px-8 py-3 rounded-xl font-bold text-white transition-all transform hover:scale-105 active:scale-95 shadow-lg ${
-                currentSlide === slidesData.length - 1
-                  ? 'bg-gray-300 cursor-not-allowed opacity-50'
-                  : 'bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600'
-              }`}
-            >
-              {currentSlide === slidesData.length - 1 ? 'Hoàn thành 🏁' : 'Tiếp tục ➡️'}
-            </button>
-          </div>
+            {/* Header Slide */}
+            <div className="mb-6 text-center flex-shrink-0">
+              <span className="inline-block py-1 px-3 rounded-full bg-gray-100 text-gray-500 text-sm font-bold tracking-wider mb-3">
+                SLIDE {currentSlide + 1} / {slidesData.length}
+              </span>
+              {slide.type === 'theory' ? (
+                <h1 className="text-3xl md:text-4xl font-extrabold drop-shadow-sm flex items-center justify-center gap-3">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-orange-500">
+                    {slide.title.substring(0, slide.title.lastIndexOf(' '))}
+                  </span>
+                  <span className="text-[1.1em] text-black drop-shadow-none">
+                    {slide.title.substring(slide.title.lastIndexOf(' ') + 1)}
+                  </span>
+                </h1>
+              ) : (
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+                  Luyện tập xíu nào! 🧠✨
+                </h1>
+              )}
+            </div>
 
+            {/* Slide Content */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-4 min-h-0 flex flex-col justify-center">
+              {slide.type === 'theory' ? (
+                <div className="animate-fade-in-up">
+                  {slide.content}
+                </div>
+              ) : (
+                <div className="max-w-2xl mx-auto w-full animate-fade-in-up">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6 text-center">
+                    {slide.question}
+                  </h2>
+                  <div className="grid gap-3">
+                    {slide.options.map((option, idx) => {
+                      const isSelected = quizAnswers[currentSlide] === idx;
+                      const isCorrect = slide.answer === idx;
+                      const isAnswered = quizAnswers[currentSlide] !== undefined;
+                      
+                      let btnClass = "p-4 text-left rounded-2xl border-2 font-medium transition-all duration-300 text-lg ";
+                      
+                      if (!isAnswered) {
+                        btnClass += "bg-white/80 backdrop-blur-sm border-white text-gray-600 hover:border-pink-400 hover:bg-white hover:-translate-y-2 hover:shadow-[0_15px_30px_-5px_rgba(236,72,153,0.3)] active:translate-y-1 active:shadow-inner cursor-pointer";
+                      } else if (isCorrect) {
+                        btnClass += "bg-green-100 border-green-500 text-green-800 shadow-inner";
+                      } else if (isSelected && !isCorrect) {
+                        btnClass += "bg-red-100 border-red-500 text-red-800";
+                      } else {
+                        btnClass += "bg-gray-50 border-gray-200 text-gray-400 opacity-50";
+                      }
+
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => handleSelectAnswer(idx)}
+                          disabled={isAnswered}
+                          className={btnClass}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span>{option}</span>
+                            {isAnswered && isCorrect && <span className="text-2xl">🎉</span>}
+                            {isAnswered && isSelected && !isCorrect && <span className="text-2xl">😢</span>}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {quizAnswers[currentSlide] !== undefined && (
+                    <div className="mt-6 flex justify-center animate-fade-in-up">
+                      <button
+                        onClick={handleResetAnswer}
+                        className="px-5 py-2 bg-white border-2 border-gray-200 text-gray-600 rounded-full font-bold hover:bg-gray-100 hover:border-gray-300 transition-all flex items-center gap-2 shadow-sm active:scale-95"
+                      >
+                        🔄 Làm lại
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Navigation Controls */}
+            <div className="mt-6 flex justify-between items-center pt-6 border-t border-gray-100 flex-shrink-0">
+              <button
+                onClick={handlePrev}
+                disabled={currentSlide === 0}
+                className={`px-6 py-3 rounded-xl font-bold transition-all ${
+                  currentSlide === 0 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-gray-300 shadow-sm'
+                }`}
+              >
+                ⬅️ Quay lại
+              </button>
+              
+              <button
+                onClick={handleNext}
+                disabled={currentSlide === slidesData.length - 1}
+                className={`px-8 py-3 rounded-xl font-bold text-white transition-all transform hover:scale-105 active:scale-95 shadow-lg ${
+                  currentSlide === slidesData.length - 1
+                    ? 'bg-gray-300 cursor-not-allowed opacity-50'
+                    : 'bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600'
+                }`}
+              >
+                {currentSlide === slidesData.length - 1 ? 'Hoàn thành 🏁' : 'Tiếp tục ➡️'}
+              </button>
+            </div>
+
+          </div>
         </div>
       </div>
-    </div>
+    </>
+    
   );
 }
